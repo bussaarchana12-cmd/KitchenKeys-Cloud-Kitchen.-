@@ -7,22 +7,36 @@ const db = require("../../database");
 router.get("/", (req, res) => {
     db.all("SELECT * FROM chefs", [], (err, rows) => {
         if (err) {
-            return res.status(500).json({
-                error: err.message
-            });
+            return res.status(500).json({ error: err.message });
         }
-
-        res.status(200).json(rows);
+        res.json(rows);
     });
 });
 
-// POST - Add a new chef
+// GET chef by ID
+router.get("/:id", (req, res) => {
+    db.get(
+        "SELECT * FROM chefs WHERE id = ?",
+        [req.params.id],
+        (err, row) => {
+            if (err) {
+                return res.status(500).json({ error: err.message });
+            }
+            if (!row) {
+                return res.status(404).json({ message: "Chef not found" });
+            }
+            res.json(row);
+        }
+    );
+});
+
+// CREATE chef
 router.post("/", (req, res) => {
     const { name, email } = req.body;
 
     if (!name || !email) {
         return res.status(400).json({
-            error: "Name and email are required"
+            message: "Name and email are required"
         });
     }
 
@@ -31,26 +45,23 @@ router.post("/", (req, res) => {
         [name, email],
         function (err) {
             if (err) {
-                return res.status(400).json({
-                    error: err.message
-                });
+                return res.status(400).json({ error: err.message });
             }
-
             res.status(201).json({
-                message: "Chef added successfully",
+                message: "Chef created successfully",
                 id: this.lastID
             });
         }
     );
 });
 
-// PUT - Update chef
+// UPDATE chef
 router.put("/:id", (req, res) => {
     const { name, email } = req.body;
 
     if (!name || !email) {
         return res.status(400).json({
-            error: "Name and email are required"
+            message: "Name and email are required"
         });
     }
 
@@ -59,48 +70,31 @@ router.put("/:id", (req, res) => {
         [name, email, req.params.id],
         function (err) {
             if (err) {
-                return res.status(400).json({
-                    error: err.message
-                });
+                return res.status(400).json({ error: err.message });
             }
-
             if (this.changes === 0) {
-                return res.status(404).json({
-                    error: "Chef not found"
-                });
+                return res.status(404).json({ message: "Chef not found" });
             }
-
-            res.status(200).json({
-                message: "Chef updated successfully"
-            });
+            res.json({ message: "Chef updated successfully" });
         }
     );
 });
 
-// DELETE - Remove chef
+// DELETE chef
 router.delete("/:id", (req, res) => {
     db.run(
         "DELETE FROM chefs WHERE id = ?",
         [req.params.id],
         function (err) {
             if (err) {
-                return res.status(400).json({
-                    error: err.message
-                });
+                return res.status(400).json({ error: err.message });
             }
-
             if (this.changes === 0) {
-                return res.status(404).json({
-                    error: "Chef not found"
-                });
+                return res.status(404).json({ message: "Chef not found" });
             }
-
-            res.status(200).json({
-                message: "Chef deleted successfully"
-            });
+            res.json({ message: "Chef deleted successfully" });
         }
     );
 });
 
 module.exports = router;
-
